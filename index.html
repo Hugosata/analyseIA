@@ -672,7 +672,9 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     1: [1, 1, 1, 1, 2],   // risque brut faible
   };
   const maitriseIndex = m => Math.max(0, MAITRISES.findIndex(x => x[0] === toMaitrise(m)));
-  const prioriteDe = (niv, m) => PRIO_GRILLE[niv][maitriseIndex(m)];
+  const PRIO_BRUT = { 3: 3, 2: 2, 1: 1 };   // maîtrise non évaluée : priorité selon le risque brut seul
+  const hasM = m => m !== null && m !== undefined && m !== '';
+  const prioriteDe = (niv, m) => hasM(m) ? PRIO_GRILLE[niv][maitriseIndex(m)] : PRIO_BRUT[niv];
   const nivColors = n => ({ bg:`var(--r${n + 1}-bg)`, fg:`var(--r${n + 1})` });
   const prioColors = p => p === 3 ? { bg:'var(--r4-bg)', fg:'var(--r4)' } : p === 2 ? { bg:'var(--r3-bg)', fg:'var(--r3)' } : p === 1 ? { bg:'var(--r1-bg)', fg:'var(--r1)' } : { bg:'var(--surface-2)', fg:'var(--ink-soft)' };
   const BAND_LBL = PRIO_LBL;
@@ -1176,12 +1178,12 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     remarque_photo: String(a?.remarque_photo || ''),
     dangers: arr(a?.dangers).slice(0, 8).map(d => {
       const g = clamp4(d.gravite), f = clamp4(d.frequence ?? d.probabilite);
-      const m = d.maitrise == null ? 1 : toMaitrise(d.maitrise);
+      const m = hasM(d.maitrise) ? toMaitrise(d.maitrise) : null;
       const brut = g * f, niveau = brutNiveau(brut), priorite = prioriteDe(niveau, m);
       const me = Array.isArray(d.mesures_existantes) ? d.mesures_existantes : (d.mesures_existantes ? [d.mesures_existantes] : []);
       return { famille:String(d.famille||'Autre'), danger:String(d.danger||''), dommage_possible:String(d.dommage_possible||''), gravite:g, frequence:f, maitrise:m,
         mesures_existantes: me.map(x => String(x || '').trim()).filter(Boolean), duerp: DUERP_ST.includes(d.duerp) ? d.duerp : 'À vérifier',
-        brut, net: Math.round(brut * m * 100) / 100, niveau, priorite, justification:String(d.justification||'') };
+        brut, net: m === null ? null : Math.round(brut * m * 100) / 100, niveau, priorite, justification:String(d.justification||'') };
     }),
     mesures_immediates: arr(a?.mesures_immediates).map(String).filter(Boolean),
     mesures_preventives: arr(a?.mesures_preventives).map(m => ({ niveau:String(m.niveau||''), mesure:String(m.mesure||''), responsable_suggere:String(m.responsable_suggere||'') }))
@@ -1191,7 +1193,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     references: arr(a?.references).map(String).filter(Boolean),
   });
   const remPrio = e => Math.max(0, ...normalize(e.analysis).dangers.map(d => d.priorite));
-  const remNet = e => Math.max(0, ...normalize(e.analysis).dangers.map(d => d.net));
+  const remNet = e => Math.max(0, ...normalize(e.analysis).dangers.map(d => d.net ?? d.brut));
   const maxCrit = e => remPrio(e) * 100 + remNet(e);   // score de tri : priorité puis risque net
   const prioBadge = (p, txt) => { const c = prioColors(p); return el('span', { class:'badge', style:`background:${c.bg};color:${c.fg};box-shadow:inset 0 0 0 1px ${c.fg}`, text: txt || (p ? `Priorité ${PRIO_LBL[p].toLowerCase()}` : '–') }); };
 
@@ -1211,17 +1213,17 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     return el('div', { class:'matrix-wrap' }, m, el('div', { class:'legend' },
       el('div', { text:'Risque brut = Gravité (vertical) × Fréquence d\'exposition (horizontal).' }),
       ...[3,2,1].map(n => el('div', {}, el('i', { style:`background:${nivColors(n).fg}` }), `${NIV_LBL[n]} (${['','1 à 3','4 à 6','8 à 16'][n]})`)),
-      el('div', { style:'margin-top:6px', text:'Risque net = brut × niveau de maîtrise. La priorité croise le niveau brut et la maîtrise.' })));
+      el('div', { style:'margin-top:6px', text:'Si la maîtrise est renseignée : risque net = brut × facteur de maîtrise.' })));
   };
   const renderPrioGrid = dangers => {
     const head = el('tr', {}, el('th', { text:'Risque brut ↓ / Maîtrise →' }), ...MAITRISES.map(([v, l]) => el('th', {}, l, el('br'), el('span', { class:'hint', text:String(v).replace('.', ',') }))));
     const rows = [3, 2, 1].map(n => el('tr', {}, el('th', { text:NIV_LBL[n] }), ...MAITRISES.map(([v], j) => {
       const p = PRIO_GRILLE[n][j], c = prioColors(p);
       const td = el('td', { style:`background:${c.bg};color:${c.fg}`, text:PRIO_LBL[p] });
-      dangers.forEach((d, i) => { if (d.niveau === n && maitriseIndex(d.maitrise) === j) td.append(' ', el('span', { class:'pin', text:`D${i+1}` })); });
+      dangers.forEach((d, i) => { if (d.maitrise !== null && d.niveau === n && maitriseIndex(d.maitrise) === j) td.append(' ', el('span', { class:'pin', text:`D${i+1}` })); });
       return td;
     })));
-    return el('div', { style:'margin-top:14px' }, el('div', { class:'hint', style:'margin:0 0 6px', text:'Grille de priorité (DUERP)' }),
+    return el('div', { style:'margin-top:14px' }, el('div', { class:'hint', style:'margin:0 0 6px', text:"Grille de priorité (DUERP) : s'applique quand le niveau de maîtrise est renseigné. Sinon, la priorité suit le risque brut (important = maximale, moyen = moyenne, faible = faible)." }),
       el('div', { style:'overflow-x:auto' }, el('table', { class:'pgrid' }, head, ...rows)));
   };
   const renderAnalysis = a => {
@@ -1242,9 +1244,11 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
             el('span', {}, el('b', { text:`G${d.gravite}` }), ` ${G_LBL[d.gravite]}`),
             el('span', {}, el('b', { text:`F${d.frequence}` }), ` ${F_LBL[d.frequence]}`),
             el('span', { style:`background:${nc.bg};border-color:${nc.fg}` }, 'Brut ', el('b', { text:String(d.brut) }), ` ${NIV_LBL[d.niveau]}`),
-            el('span', {}, 'Maîtrise ', el('b', { text:String(d.maitrise).replace('.', ',') }), ` ${mi[1]}`),
-            el('span', {}, 'Net ', el('b', { text:String(d.net).replace('.', ',') }))),
-          d.mesures_existantes.length ? el('p', {}, el('b', { text:'Mesures existantes : ' }), d.mesures_existantes.join(' ; ')) : el('p', { class:'hint', style:'margin:6px 0 0', text:'Aucune mesure existante identifiée.' }),
+            d.maitrise === null ? el('span', { class:'hint' }, 'Maîtrise ', el('b', { text:'à évaluer' }))
+              : el('span', {}, 'Maîtrise ', el('b', { text:String(d.maitrise).replace('.', ',') }), ` ${mi[1]}`),
+            d.maitrise === null ? null : el('span', {}, 'Net ', el('b', { text:String(d.net).replace('.', ',') }))),
+          el('p', { class:'hint', style:'margin:6px 0 0', text: d.maitrise === null ? 'Priorité calculée sur le risque brut seul.' : 'Priorité calculée sur le risque brut et le niveau de maîtrise.' }),
+          d.mesures_existantes.length ? el('p', {}, el('b', { text:'Mesures existantes : ' }), d.mesures_existantes.join(' ; ')) : null,
           d.dommage_possible ? el('p', { text:`Dommage possible : ${d.dommage_possible}` }) : null,
           d.justification ? el('p', { text:d.justification }) : null,
           el('p', { class:'hint', style:'margin:6px 0 0' }, 'DUERP : ', el('b', { text:d.duerp }))));
@@ -1559,10 +1563,11 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       const fam = optSel(FAMILLES.includes(d.famille) ? FAMILLES : [d.famille, ...FAMILLES], d.famille); fam.onchange = () => d.famille = fam.value;
       const res = el('div', { class:'hint', style:'margin:6px 0 0' });
       const recalc = () => { const b = d.gravite * d.frequence, n = brutNiveau(b), pr = prioriteDe(n, d.maitrise);
-        res.replaceChildren(`Risque brut ${b} (${NIV_LBL[n]}) · net ${String(Math.round(b * d.maitrise * 100) / 100).replace('.', ',')} · `, prioBadge(pr)); };
+        res.replaceChildren(`Risque brut ${b} (${NIV_LBL[n]})${hasM(d.maitrise) ? ` · net ${String(Math.round(b * d.maitrise * 100) / 100).replace('.', ',')}` : ' · maîtrise à évaluer'} · `, prioBadge(pr)); };
       const g = optSel(gp.map(v => ({ v, l:`${v} · ${G_LBL[v]}` })), d.gravite); g.title = G_DESC[d.gravite]; g.onchange = () => { d.gravite = Number(g.value); recalc(); };
       const f = optSel(gp.map(v => ({ v, l:`${v} · ${F_LBL[v]} (${F_DESC[v]})` })), d.frequence); f.onchange = () => { d.frequence = Number(f.value); recalc(); };
-      const mt = optSel(MAITRISES.map(([v, l]) => ({ v, l:`${String(v).replace('.', ',')} · ${l}` })), d.maitrise); mt.onchange = () => { d.maitrise = Number(mt.value); recalc(); };
+      const mt = optSel([{ v:'', l:'À évaluer (priorité sur le brut seul)' }, ...MAITRISES.map(([v, l]) => ({ v, l:`${String(v).replace('.', ',')} · ${l}` }))], hasM(d.maitrise) ? d.maitrise : '');
+      mt.onchange = () => { d.maitrise = mt.value === '' ? null : Number(mt.value); recalc(); };
       const du = optSel(DUERP_ST, d.duerp); du.onchange = () => d.duerp = du.value;
       const me = el('textarea', { style:'min-height:50px', placeholder:'Une mesure par ligne' }); me.value = d.mesures_existantes.join('\n');
       me.oninput = () => d.mesures_existantes = me.value.split('\n').map(x => x.trim()).filter(Boolean);
@@ -1610,7 +1615,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     wrap.append(
       el('label', { class:'field' }, el('span', { text:'Synthèse' }), synth),
       el('div', { class:'field' }, el('span', { style:'display:block;font-size:14px;font-weight:600;margin-bottom:4px', text:'Dangers et cotation' }), dBox,
-        el('button', { type:'button', class:'btn ghost small', text:'Ajouter un danger', onclick:() => { a.dangers.push({ famille:'Autre', danger:'', dommage_possible:'', gravite:2, frequence:2, maitrise:1, mesures_existantes:[], duerp:'À vérifier', justification:'' }); drawD(); } })),
+        el('button', { type:'button', class:'btn ghost small', text:'Ajouter un danger', onclick:() => { a.dangers.push({ famille:'Autre', danger:'', dommage_possible:'', gravite:2, frequence:2, maitrise:null, mesures_existantes:[], duerp:'À vérifier', justification:'' }); drawD(); } })),
       el('label', { class:'field' }, el('span', { text:'À faire tout de suite (une mesure par ligne)' }), imm),
       el('div', { class:'field' }, el('span', { style:'display:block;font-size:14px;font-weight:600;margin-bottom:4px', text:'Mesures préventives' }), mBox,
         el('button', { type:'button', class:'btn ghost small', text:'Ajouter une mesure', onclick:() => { a.mesures_preventives.push({ niveau:'Organisationnel', mesure:'', responsable_suggere:'' }); drawM(); } })),
@@ -2347,7 +2352,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       const ds = a.dangers.length ? a.dangers : [null];
       ds.forEach((d, i) => rows.push([e.id, fmtDateTime(e.date), e.declarant, e.type, e.site, e.secteur, e.lieu, e.desc, e.note_vocale, e.statut, e.closed_at ? fmtDate(e.closed_at) : '',
         d ? i + 1 : '', d?.famille, d?.danger, d?.gravite, d?.frequence, d?.brut, d ? NIV_LBL[d.niveau] : '', d ? d.mesures_existantes.join(' / ') : '',
-        d ? String(d.maitrise).replace('.', ',') : '', d ? String(d.net).replace('.', ',') : '', d ? PRIO_LBL[d.priorite] : '', d?.duerp, imm, prev, acts, e.suivi?.message]));
+        d && d.maitrise !== null ? String(d.maitrise).replace('.', ',') : '', d && d.net !== null ? String(d.net).replace('.', ',') : '', d ? PRIO_LBL[d.priorite] : '', d?.duerp, imm, prev, acts, e.suivi?.message]));
     }
     const csv = '\ufeff' + rows.map(r => r.map(csvCell).join(';')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
