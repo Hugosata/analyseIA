@@ -1279,9 +1279,29 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     catch (e) { if (e.status !== 401) allErr = e.offline ? 'Hors ligne : le tableau de bord et le registre nécessitent du réseau.' : (e.message || 'Chargement impossible.'); }
     finally { loadingAll = false; }
     fillSecteurs();
+    watchPending();
     if (currentView === 'dash') renderDash();
     if (currentView === 'reg') renderReg();
     if (currentView === 'plan') renderPlan();
+  }
+  const isPending = e => e.analysis_status === 'en_attente' || e.analysis_status === 'en_cours';
+  // Mise à jour automatique des fiches dont l'analyse tourne encore en arrière-plan
+  let pendingTimer = null;
+  function watchPending() {
+    clearTimeout(pendingTimer);
+    if (!isAdmin() || !entries.some(isPending)) return;
+    pendingTimer = setTimeout(async () => {
+      try {
+        const fresh = (await api('/api/remontees')).items || [];
+        for (const f of fresh) {
+          const old = entries.find(x => x.id === f.id);
+          if (old && isPending(old) && !isPending(f)) { replaceEntry(f); rerender(f.id); }
+          else if (!old) entries.unshift(f);
+        }
+        if (currentView === 'dash') renderDash();
+      } catch {}
+      watchPending();
+    }, 15000);
   }
   const replaceEntry = item => { const i = entries.findIndex(x => x.id === item.id); if (i >= 0) entries[i] = item; else entries.unshift(item); };
 
@@ -1426,7 +1446,8 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
         el('div', {},
           el('div', { class:'etitle', text: titleOf(e) }),
           el('div', { class:'emeta', text:[fmtDate(e.date), e.type, e.site, e.secteur, e.lieu, e.declarant].filter(Boolean).join(' · ') }),
-          e.analysis_status === 'erreur' ? el('span', { class:'flag', text:'Analyse à relancer' }) : e.analysis?.modifie_par_admin ? el('span', { class:'flag soft', text:'Analyse modifiée' }) : null),
+          e.analysis_status === 'erreur' ? el('span', { class:'flag', text:'Analyse à relancer' })
+            : isPending(e) ? el('span', { class:'flag soft', text:'Analyse IA en cours…' }) : e.analysis?.modifie_par_admin ? el('span', { class:'flag soft', text:'Analyse modifiée' }) : null),
         el('div', { class:'eright' },
           prioBadge(pr, pr ? PRIO_LBL[pr] : '–'),
           el('span', { class:`chip ${stClass(e.statut)}`, text:e.statut }))),
@@ -1455,6 +1476,18 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     const an = el('div', { class:'sec' });
     const renderAn = () => {
       an.replaceChildren(el('h4', { text:'Analyse IA' }));
+      if (isPending(e)) {
+        const go = el('button', { class:'btn ghost small', text:"Lancer l'analyse maintenant" });
+        go.onclick = async () => {
+          go.disabled = true; go.textContent = 'Analyse en cours (30 à 60 s)…';
+          try { const r = await api(`/api/remontees/${e.id}/reanalyze`, { method:'POST' });
+            e.analysis = r.analysis; e.analysis_status = 'ok'; e.note_vocale = r.note_vocale || e.note_vocale; replaceEntry(e); rerender(e.id); toast('Analyse terminée'); }
+          catch (err) { go.disabled = false; go.textContent = "Lancer l'analyse maintenant"; toast(err.message || "L'analyse a échoué."); }
+        };
+        an.append(el('p', { class:'hint', style:'margin:0 0 10px' }, el('span', { class:'spin', style:'width:14px;height:14px;border-width:2px;margin-right:6px' }),
+          "L'analyse IA tourne en arrière-plan (en général moins d'une minute). Cette fiche se mettra à jour toute seule."), go);
+        return;
+      }
       if (e.analysis_status === 'erreur') {
         const b = el('button', { class:'btn small', text:"Relancer l'analyse" });
         b.onclick = async () => {
