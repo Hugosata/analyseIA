@@ -130,6 +130,12 @@ textarea{min-height:96px;resize:vertical}
 .dhead b{font-family:var(--cond);font-size:19px;font-weight:600}
 .badge{font-family:var(--cond);font-weight:700;font-size:15px;padding:2px 8px;border-radius:3px;white-space:nowrap}
 .fam{font-size:13px;color:var(--ink-soft)}
+.pgrid{border-collapse:collapse;font-size:12px;min-width:520px;width:100%}
+.pgrid th,.pgrid td{border:1px solid var(--line);padding:5px 6px;text-align:center;font-weight:600}
+.pgrid th{background:var(--surface-2);color:var(--ink);font-weight:600}
+.pgrid th .hint{font-weight:400}
+.cot{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:13px}
+.cot span{border:1px solid var(--line);border-radius:3px;padding:2px 7px;background:var(--surface-2)}
 .danger p{margin:6px 0 0;font-size:15px}
 ul.clean{margin:0;padding-left:20px}
 ul.clean li{margin-bottom:6px}
@@ -257,7 +263,14 @@ ol.why li{margin-bottom:6px}
 .prow label{font-size:12px;font-weight:600;display:block}
 .prow input,.prow select,.prow textarea{padding:7px 9px;margin-top:2px}
 .late{color:var(--r4);font-weight:600;font-size:12px}
-.planedit{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:8px;align-items:end}
+ul.histo{list-style:none;margin:0;padding:0}
+ul.histo li{padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+ul.histo li:first-child{border-top:0}
+.oldver{margin-top:8px;padding:8px;border:2px dashed var(--line);border-radius:4px}
+.verif{margin-top:8px;padding:8px;border-left:3px solid var(--r1);background:var(--surface)}
+.verif b{font-size:13px}
+.effchip{font-size:12px;font-weight:600}
+.planedit{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:8px;align-items:end}
 .planedit input,.planedit select{padding:7px 9px;margin-top:2px}
 @media (max-width:560px){.planedit{grid-template-columns:1fr 1fr}}
 .audlist{display:grid;gap:8px;margin-top:8px}
@@ -373,7 +386,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     <!-- Signaler -->
     <section id="view-new">
       <h1 class="view-title">Signaler</h1>
-      <p class="view-sub">Une situation dangereuse ou un presque accident. Fonctionne aussi sans réseau.</p>
+      <p class="view-sub">Un danger, un presque accident, un problème environnemental ou une idée d'amélioration. Fonctionne aussi sans réseau.</p>
       <div id="result" hidden></div>
       <form id="form" novalidate>
         <fieldset class="step" style="padding-top:8px">
@@ -383,6 +396,10 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
             <label for="t-sd"><b>Situation dangereuse</b><span>Un danger est présent, rien ne s'est produit</span></label>
             <input type="radio" name="type" id="t-pa" value="Presque accident">
             <label for="t-pa"><b>Presque accident</b><span>Un événement a eu lieu, sans blessé</span></label>
+            <input type="radio" name="type" id="t-env" value="Événement environnemental">
+            <label for="t-env"><b>Environnement</b><span>Fuite, déversement, déchets, atteinte à la nature</span></label>
+            <input type="radio" name="type" id="t-sug" value="Suggestion / bonne pratique">
+            <label for="t-sug"><b>Suggestion</b><span>Une idée d'amélioration ou une bonne pratique</span></label>
           </div>
         </fieldset>
 
@@ -476,9 +493,9 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
           <option value="actifs">Non clôturées</option>
           <option>Ouvert</option><option>En cours</option><option>Clôturé</option>
         </select>
-        <select id="fNiveau" aria-label="Niveau de risque">
-          <option value="">Tous les niveaux</option>
-          <option value="4">Critique</option><option value="3">Important</option><option value="2">Modéré</option><option value="1">Faible</option>
+        <select id="fNiveau" aria-label="Priorité">
+          <option value="">Toutes les priorités</option>
+          <option value="3">Priorité maximale</option><option value="2">Priorité moyenne</option><option value="1">Priorité faible</option>
           <option value="erreur">Analyse à relancer</option>
         </select>
         <select id="fSite" aria-label="Site"><option value="">Tous les sites</option></select>
@@ -576,7 +593,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       <div id="planKpis"></div>
       <div class="filters">
         <select id="pSource" aria-label="Origine"><option value="">Toutes les origines</option><option value="rem">Remontées terrain</option><option value="at">Accidents du travail</option></select>
-        <select id="pStatut" aria-label="Statut"><option value="actives">Non réalisées</option><option value="">Tous les statuts</option><option>À faire</option><option>En cours</option><option>Réalisée</option><option value="retard">En retard</option></select>
+        <select id="pStatut" aria-label="Statut"><option value="actives">Non réalisées</option><option value="">Tous les statuts</option><option>À faire</option><option>En cours</option><option>Réalisée</option><option value="retard">En retard</option><option value="verif">Efficacité à vérifier</option><option value="nonefficace">Non efficaces</option></select>
         <select id="pSite" aria-label="Site"></select>
         <select id="pTri" aria-label="Tri"><option value="echeance">Tri : échéance</option><option value="crit">Tri : gravité</option><option value="recent">Tri : plus récentes</option></select>
       </div>
@@ -617,7 +634,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
   const SESSION_KEY = 'vigie.session.v1', UIDS_KEY = 'vigie.uids.v1';
   const MAX_PHOTOS = 4, MAX_REC_S = 120;
   const NIVEAUX = ['Suppression','Substitution','Protection collective','Organisationnel','EPI','Information / formation'];
-  const FAMILLES = ['Chute de hauteur','Chute de plain-pied','Manutention / TMS','Circulation / engins','Machines et équipements','Électrique','Incendie / explosion','Chimique','Ambiances climatiques (froid, UV, altitude)','Milieu montagne (avalanche, chute de pierres)','Bruit / vibrations','Co-activité / entreprise extérieure','Organisation / psychosocial','Autre'];
+  const FAMILLES = ['Chute de hauteur','Chute de plain-pied','Manutention / TMS','Circulation / engins','Machines et équipements','Électrique','Incendie / explosion','Chimique','Ambiances climatiques (froid, UV, altitude)','Milieu montagne (avalanche, chute de pierres)','Bruit / vibrations','Co-activité / entreprise extérieure','Organisation / psychosocial','Environnement : pollution (sol, eau, air)','Environnement : déchets','Environnement : faune, flore, milieux','Environnement : énergie, ressources','Autre'];
   const STATUTS = ['Ouvert','En cours','Clôturé'];
   // Sites du groupe et unités de travail du DUERP de chaque site : modifiez ces listes si besoin
   const SITES = ["Les 2 Alpes", "Alpe d'Huez", 'La Grave', 'Alpe du Grand Serre'];
@@ -634,9 +651,31 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
   };
   const METIERS_TOUS = [...new Set(Object.values(METIERS_PAR_SITE).flat())];
   const metiersFor = site => [...(METIERS_PAR_SITE[site] || METIERS_TOUS), 'Autre'];
-  const G_LBL = ['','Bénigne','Sérieuse','Grave','Très grave'];
-  const P_LBL = ['','Improbable','Rare','Probable','Fréquente'];
-  const BAND_LBL = ['','Faible','Modéré','Important','Critique'];
+  // Cotation du DUERP : risque brut = Gravité x Fréquence ; risque net = brut x maîtrise ; priorité = f(niveau brut, niveau de maîtrise)
+  const G_LBL = ['','Faible','Moyenne','Grave','Très grave'];
+  const G_DESC = ['','Inconfort, accident ou maladie sans arrêt de travail, mineur','Accident ou maladie avec arrêt de travail, réversible','Accident ou maladie avec incapacité permanente partielle, irréversible','Accident ou maladie mortel'];
+  const F_LBL = ['','Occasionnelle','Intermittente','Fréquente','Permanente'];
+  const F_DESC = ['','< 30 min par jour, ou < 5 jours par saison','30 min à 2 h par jour, ou 5 jours à 2 mois','2 à 6 h par jour, ou 2 à 5 mois','> 6 h par jour, ou > 5 mois'];
+  // Niveau de maîtrise = facteur correctif selon le type de la mesure existante la plus efficace
+  const MAITRISES = [[0.2,'Sécurité intrinsèque','Bonne'],[0.4,'Protection collective','Bonne'],[0.6,'Protection individuelle','À améliorer'],[0.8,'Consigne, instruction, formation','À améliorer'],[1,'Aucune mesure','Insuffisante']];
+  const mInfo = m => MAITRISES.find(x => x[0] === m) || MAITRISES[4];
+  const toMaitrise = v => { const n = Number(v); if (!isFinite(n) || n <= 0) return 1; return MAITRISES.reduce((b, x) => Math.abs(x[0] - n) < Math.abs(b - n) ? x[0] : b, 1); };
+  const NIV_LBL = ['','Faible','Moyen','Important'];
+  const PRIO_LBL = ['','Faible','Moyenne','Maximale'];
+  const DUERP_ST = ['À vérifier','Déjà évalué au DUERP','À ajouter au DUERP','À réévaluer au DUERP'];
+  const brutNiveau = r => r >= 8 ? 3 : r >= 4 ? 2 : 1;
+  // Grille de priorité : lignes = niveau de risque brut, colonnes = les 5 niveaux de maîtrise (0,2 · 0,4 · 0,6 · 0,8 · 1)
+  // 1 = priorité faible, 2 = moyenne, 3 = maximale. Modifiez ces valeurs pour ajuster la grille.
+  const PRIO_GRILLE = {
+    3: [1, 2, 2, 3, 3],   // risque brut important
+    2: [1, 1, 2, 2, 3],   // risque brut moyen
+    1: [1, 1, 1, 1, 2],   // risque brut faible
+  };
+  const maitriseIndex = m => Math.max(0, MAITRISES.findIndex(x => x[0] === toMaitrise(m)));
+  const prioriteDe = (niv, m) => PRIO_GRILLE[niv][maitriseIndex(m)];
+  const nivColors = n => ({ bg:`var(--r${n + 1}-bg)`, fg:`var(--r${n + 1})` });
+  const prioColors = p => p === 3 ? { bg:'var(--r4-bg)', fg:'var(--r4)' } : p === 2 ? { bg:'var(--r3-bg)', fg:'var(--r3)' } : p === 1 ? { bg:'var(--r1-bg)', fg:'var(--r1)' } : { bg:'var(--surface-2)', fg:'var(--ink-soft)' };
+  const BAND_LBL = PRIO_LBL;
 
   const $ = s => document.querySelector(s);
   const el = (tag, attrs = {}, ...kids) => {
@@ -699,7 +738,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     try {
       r = await fetch(API_URL + path, {
         method, signal,
-        headers: { 'Content-Type': 'application/json', 'X-Access-Code': session?.code || '', 'X-User-Id': session?.uid || '' },
+        headers: { 'Content-Type': 'application/json', 'X-Access-Code': session?.code || '', 'X-User-Id': session?.uid || '', 'X-User-Name': encodeURIComponent(session?.name || '') },
         body: body ? JSON.stringify(body) : undefined,
       });
     } catch (e) {
@@ -1103,7 +1142,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       if (suivi.message) s.append(el('p', { class:'msg', text: suivi.message }));
       if (suivi.actions?.length) s.append(el('ul', { class:'actlist' }, ...suivi.actions.map(normAction).map(a => {
         const done = a.statut === 'Réalisée';
-        const info = done ? '' : a.statut === 'En cours' ? ' (en cours)' : ` (prévue${a.echeance ? ' pour le ' + fmtDate(a.echeance) : ''})`;
+        const info = done ? (a.verif_resultat === 'Efficace' ? ' (réalisée, efficacité vérifiée)' : ' (réalisée)') : a.statut === 'En cours' ? ' (en cours)' : ` (prévue${a.echeance ? ' pour le ' + fmtDate(a.echeance) : ''})`;
         return el('li', {}, el('span', { class:`tick${done ? ' done' : ''}`, 'aria-label': done ? 'Réalisée' : a.statut, text: done ? '✓' : '' }), el('span', { text: a.texte + info }));
       })));
       if (!suivi.message && !suivi.actions?.length) s.append(el('p', { class:'hint', style:'margin:0', text: e.statut === 'Clôturé' ? 'Remontée clôturée.' : "Le service QSE n'a pas encore indiqué d'action." }));
@@ -1136,8 +1175,13 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     photo_exploitable: a?.photo_exploitable !== false,
     remarque_photo: String(a?.remarque_photo || ''),
     dangers: arr(a?.dangers).slice(0, 8).map(d => {
-      const g = clamp4(d.gravite), p = clamp4(d.probabilite);
-      return { famille:String(d.famille||'Autre'), danger:String(d.danger||''), dommage_possible:String(d.dommage_possible||''), gravite:g, probabilite:p, criticite:g*p, justification:String(d.justification||'') };
+      const g = clamp4(d.gravite), f = clamp4(d.frequence ?? d.probabilite);
+      const m = d.maitrise == null ? 1 : toMaitrise(d.maitrise);
+      const brut = g * f, niveau = brutNiveau(brut), priorite = prioriteDe(niveau, m);
+      const me = Array.isArray(d.mesures_existantes) ? d.mesures_existantes : (d.mesures_existantes ? [d.mesures_existantes] : []);
+      return { famille:String(d.famille||'Autre'), danger:String(d.danger||''), dommage_possible:String(d.dommage_possible||''), gravite:g, frequence:f, maitrise:m,
+        mesures_existantes: me.map(x => String(x || '').trim()).filter(Boolean), duerp: DUERP_ST.includes(d.duerp) ? d.duerp : 'À vérifier',
+        brut, net: Math.round(brut * m * 100) / 100, niveau, priorite, justification:String(d.justification||'') };
     }),
     mesures_immediates: arr(a?.mesures_immediates).map(String).filter(Boolean),
     mesures_preventives: arr(a?.mesures_preventives).map(m => ({ niveau:String(m.niveau||''), mesure:String(m.mesure||''), responsable_suggere:String(m.responsable_suggere||'') }))
@@ -1146,24 +1190,39 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     points_a_verifier: arr(a?.points_a_verifier).map(String).filter(Boolean),
     references: arr(a?.references).map(String).filter(Boolean),
   });
-  const maxCrit = e => Math.max(0, ...normalize(e.analysis).dangers.map(d => d.criticite));
+  const remPrio = e => Math.max(0, ...normalize(e.analysis).dangers.map(d => d.priorite));
+  const remNet = e => Math.max(0, ...normalize(e.analysis).dangers.map(d => d.net));
+  const maxCrit = e => remPrio(e) * 100 + remNet(e);   // score de tri : priorité puis risque net
+  const prioBadge = (p, txt) => { const c = prioColors(p); return el('span', { class:'badge', style:`background:${c.bg};color:${c.fg};box-shadow:inset 0 0 0 1px ${c.fg}`, text: txt || (p ? `Priorité ${PRIO_LBL[p].toLowerCase()}` : '–') }); };
 
   const renderMatrix = dangers => {
-    const m = el('div', { class:'matrix', role:'img', 'aria-label':'Matrice gravité par probabilité' });
+    const m = el('div', { class:'matrix', role:'img', 'aria-label':'Matrice gravité par fréquence (risque brut)' });
     for (let g = 4; g >= 1; g--) {
       m.append(el('div', { class:'ax', text:String(g), title:`Gravité ${g} : ${G_LBL[g]}` }));
-      for (let p = 1; p <= 4; p++) {
-        const c = bandColors(band(g*p));
+      for (let f = 1; f <= 4; f++) {
+        const c = nivColors(brutNiveau(g * f));
         const cell = el('div', { class:'cell', style:`background:${c.bg};box-shadow:inset 0 0 0 1px ${c.fg}` });
-        dangers.forEach((d, i) => { if (d.gravite === g && d.probabilite === p) cell.append(el('span', { class:'pin', text:`D${i+1}` })); });
+        dangers.forEach((d, i) => { if (d.gravite === g && d.frequence === f) cell.append(el('span', { class:'pin', text:`D${i+1}` })); });
         m.append(cell);
       }
     }
     m.append(el('div'));
-    for (let p = 1; p <= 4; p++) m.append(el('div', { class:'ax', text:String(p), title:`Probabilité ${p} : ${P_LBL[p]}` }));
+    for (let f = 1; f <= 4; f++) m.append(el('div', { class:'ax', text:String(f), title:`Fréquence ${f} : ${F_LBL[f]}` }));
     return el('div', { class:'matrix-wrap' }, m, el('div', { class:'legend' },
-      el('div', { text:'Vertical : gravité. Horizontal : probabilité.' }),
-      ...[4,3,2,1].map(b => el('div', {}, el('i', { style:`background:var(--r${b})` }), `${BAND_LBL[b]} (${['','1 à 3','4 à 6','8 à 9','12 à 16'][b]})`))));
+      el('div', { text:'Risque brut = Gravité (vertical) × Fréquence d\'exposition (horizontal).' }),
+      ...[3,2,1].map(n => el('div', {}, el('i', { style:`background:${nivColors(n).fg}` }), `${NIV_LBL[n]} (${['','1 à 3','4 à 6','8 à 16'][n]})`)),
+      el('div', { style:'margin-top:6px', text:'Risque net = brut × niveau de maîtrise. La priorité croise le niveau brut et la maîtrise.' })));
+  };
+  const renderPrioGrid = dangers => {
+    const head = el('tr', {}, el('th', { text:'Risque brut ↓ / Maîtrise →' }), ...MAITRISES.map(([v, l]) => el('th', {}, l, el('br'), el('span', { class:'hint', text:String(v).replace('.', ',') }))));
+    const rows = [3, 2, 1].map(n => el('tr', {}, el('th', { text:NIV_LBL[n] }), ...MAITRISES.map(([v], j) => {
+      const p = PRIO_GRILLE[n][j], c = prioColors(p);
+      const td = el('td', { style:`background:${c.bg};color:${c.fg}`, text:PRIO_LBL[p] });
+      dangers.forEach((d, i) => { if (d.niveau === n && maitriseIndex(d.maitrise) === j) td.append(' ', el('span', { class:'pin', text:`D${i+1}` })); });
+      return td;
+    })));
+    return el('div', { style:'margin-top:14px' }, el('div', { class:'hint', style:'margin:0 0 6px', text:'Grille de priorité (DUERP)' }),
+      el('div', { style:'overflow-x:auto' }, el('table', { class:'pgrid' }, head, ...rows)));
   };
   const renderAnalysis = a => {
     const frag = document.createDocumentFragment();
@@ -1172,16 +1231,23 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     if (!a.photo_exploitable && a.remarque_photo) top.append(el('p', { class:'qualif', text:`Photo : ${a.remarque_photo}` }));
     frag.append(top);
     if (a.dangers.length) {
-      frag.append(el('div', { class:'card' }, el('h3', { text:'Cotation des risques' }), renderMatrix(a.dangers)));
+      frag.append(el('div', { class:'card' }, el('h3', { text:'Cotation des risques' }), renderMatrix(a.dangers), renderPrioGrid(a.dangers)));
       const dl = el('div', { class:'card' }, el('h3', { text:'Dangers identifiés' }));
       a.dangers.forEach((d, i) => {
-        const b = band(d.criticite), col = bandColors(b);
+        const mi = mInfo(d.maitrise), nc = nivColors(d.niveau);
         dl.append(el('div', { class:'danger' },
-          el('div', { class:'dhead' }, el('b', { text:`D${i+1}. ${d.danger}` }),
-            el('span', { class:'badge', style:`background:${col.bg};color:${col.fg};box-shadow:inset 0 0 0 1px ${col.fg}`, text:`${d.criticite} · ${BAND_LBL[b]}` })),
-          el('div', { class:'fam', text:`${d.famille}. Gravité ${d.gravite} (${G_LBL[d.gravite]}), probabilité ${d.probabilite} (${P_LBL[d.probabilite]})` }),
+          el('div', { class:'dhead' }, el('b', { text:`D${i+1}. ${d.danger}` }), prioBadge(d.priorite)),
+          el('div', { class:'fam', text:d.famille }),
+          el('div', { class:'cot' },
+            el('span', {}, el('b', { text:`G${d.gravite}` }), ` ${G_LBL[d.gravite]}`),
+            el('span', {}, el('b', { text:`F${d.frequence}` }), ` ${F_LBL[d.frequence]}`),
+            el('span', { style:`background:${nc.bg};border-color:${nc.fg}` }, 'Brut ', el('b', { text:String(d.brut) }), ` ${NIV_LBL[d.niveau]}`),
+            el('span', {}, 'Maîtrise ', el('b', { text:String(d.maitrise).replace('.', ',') }), ` ${mi[1]}`),
+            el('span', {}, 'Net ', el('b', { text:String(d.net).replace('.', ',') }))),
+          d.mesures_existantes.length ? el('p', {}, el('b', { text:'Mesures existantes : ' }), d.mesures_existantes.join(' ; ')) : el('p', { class:'hint', style:'margin:6px 0 0', text:'Aucune mesure existante identifiée.' }),
           d.dommage_possible ? el('p', { text:`Dommage possible : ${d.dommage_possible}` }) : null,
-          d.justification ? el('p', { text:d.justification }) : null));
+          d.justification ? el('p', { text:d.justification }) : null,
+          el('p', { class:'hint', style:'margin:6px 0 0' }, 'DUERP : ', el('b', { text:d.duerp }))));
       });
       frag.append(dl);
     }
@@ -1239,7 +1305,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     const list = entries.filter(e => new Date(e.date) >= since && (!dSite || e.site === dSite));
     const open = list.filter(e => e.statut === 'Ouvert'), prog = list.filter(e => e.statut === 'En cours'), closed = list.filter(e => e.statut === 'Clôturé');
     const active = list.filter(e => e.statut !== 'Clôturé');
-    const crit = active.filter(e => maxCrit(e) >= 12);
+    const crit = active.filter(e => remPrio(e) === 3);
     const toAnalyze = list.filter(e => e.analysis_status === 'erreur');
     const delays = closed.filter(e => e.closed_at).map(e => (new Date(e.closed_at) - new Date(e.date)) / 86400000);
     const avgDelay = delays.length ? Math.round(delays.reduce((a, b) => a + b, 0) / delays.length) : null;
@@ -1252,7 +1318,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       kpi(open.length, 'Ouvertes', 'var(--r3)', goReg('Ouvert')),
       kpi(prog.length, 'En cours', 'var(--r2)', goReg('En cours')),
       kpi(closed.length, 'Clôturées', 'var(--r1)', goReg('Clôturé')),
-      kpi(crit.length, 'Critiques non clôturées', 'var(--r4)', goReg('actifs', '4')));
+      kpi(crit.length, 'Priorité maximale non clôturées', 'var(--r4)', goReg('actifs', '3')));
     const extra = el('p', { class:'hint', style:'margin:0 0 14px' },
       `${list.length} remontée(s) sur la période`,
       avgDelay != null ? ` · délai moyen de clôture : ${avgDelay} jour(s)` : '',
@@ -1262,16 +1328,17 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     const prio = [...active].sort((a, b) => maxCrit(b) - maxCrit(a) || new Date(a.date) - new Date(b.date)).slice(0, 6);
     const prioCard = el('div', { class:'card' }, el('h3', { text:'À traiter en priorité' }),
       prio.length ? el('div', {}, ...prio.map(e => {
-        const c = maxCrit(e), col = bandColors(band(c || 1));
+        const pr = remPrio(e);
         return el('button', { class:'prio', onclick: () => openInReg(e.id) },
-          el('span', { class:'badge', style:`background:${col.bg};color:${col.fg}`, text: c ? String(c) : '–' }),
+          prioBadge(pr, pr ? PRIO_LBL[pr] : '–'),
           el('span', {}, el('div', { class:'etitle', text: titleOf(e) }), el('div', { class:'emeta', text:`${[e.site, e.secteur, e.lieu].filter(Boolean).join(' · ')} · il y a ${daysSince(e.date)} j` })),
           el('span', { class:`chip ${stClass(e.statut)}`, text:e.statut }));
       })) : el('p', { class:'hint', style:'margin:0', text:'Aucune remontée en attente de traitement.' }));
 
     // Répartitions
-    const byBand = [4,3,2,1].map(b => [BAND_LBL[b], active.filter(e => { const c = maxCrit(e); return c && band(c) === b; }).length]);
+    const byBand = [3,2,1].map(p => [`Priorité ${PRIO_LBL[p].toLowerCase()}`, active.filter(e => remPrio(e) === p).length]);
     const count = (items, key) => Object.entries(items.reduce((m, e) => { const k = key(e); if (k) m[k] = (m[k] || 0) + 1; return m; }, {})).sort((a, b) => b[1] - a[1]);
+    const byType = count(list, e => e.type);
     const bySect = count(list, e => e.secteur).slice(0, 10);
     const bySite = count(list, e => e.site);
     const byFam = count(list, e => normalize(e.analysis).dangers[0]?.famille).slice(0, 8);
@@ -1287,8 +1354,9 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     const mMax = Math.max(1, ...months.map(m => m[1]));
 
     box.replaceChildren(kpis, extra, prioCard,
-      el('div', { class:'card' }, el('h3', { text:'Niveau de risque des remontées non clôturées' }),
-        bars(byBand, label => `var(--r${BAND_LBL.indexOf(label)})`)),
+      el('div', { class:'card' }, el('h3', { text:'Priorité des remontées non clôturées (cotation DUERP)' }),
+        bars(byBand, (label, i) => prioColors(3 - i).fg)),
+      el('div', { class:'card' }, el('h3', { text:'Par type de remontée' }), byType.length ? bars(byType) : el('p', { class:'hint', text:'Aucune donnée.' })),
       ...(dSite ? [] : [el('div', { class:'card' }, el('h3', { text:'Par site' }), bySite.length ? bars(bySite) : el('p', { class:'hint', text:'Aucune donnée.' }))]),
       el('div', { class:'card' }, el('h3', { text:'Par catégorie métier' }), bySect.length ? bars(bySect) : el('p', { class:'hint', text:'Aucune donnée.' })),
       el('div', { class:'card' }, el('h3', { text:'Par famille de danger principal' }), byFam.length ? bars(byFam) : el('p', { class:'hint', text:'Aucune donnée.' })),
@@ -1323,7 +1391,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       if (st === 'actifs' && e.statut === 'Clôturé') return false;
       if (st && st !== 'actifs' && e.statut !== st) return false;
       if (nv === 'erreur' && e.analysis_status !== 'erreur') return false;
-      if (nv && nv !== 'erreur') { const c = maxCrit(e); if (!c || band(c) !== Number(nv)) return false; }
+      if (nv && nv !== 'erreur' && remPrio(e) !== Number(nv)) return false;
       if (se && e.secteur !== se) return false;
       if (si && e.site !== si) return false;
       if (q) {
@@ -1350,7 +1418,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
   }
 
   function adminEntry(e) {
-    const c = maxCrit(e), col = bandColors(band(c || 1));
+    const pr = remPrio(e), col = prioColors(pr);
     const body = el('div', { class:'ebody' });
     const det = el('details', { class:'entry', 'data-id': e.id, style:`border-left-color:${e.analysis_status === 'erreur' ? 'var(--line)' : col.fg}` },
       el('summary', {},
@@ -1360,7 +1428,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
           el('div', { class:'emeta', text:[fmtDate(e.date), e.type, e.site, e.secteur, e.lieu, e.declarant].filter(Boolean).join(' · ') }),
           e.analysis_status === 'erreur' ? el('span', { class:'flag', text:'Analyse à relancer' }) : e.analysis?.modifie_par_admin ? el('span', { class:'flag soft', text:'Analyse modifiée' }) : null),
         el('div', { class:'eright' },
-          el('span', { class:'badge', style:`background:${col.bg};color:${col.fg}`, text: c ? String(c) : '–' }),
+          prioBadge(pr, pr ? PRIO_LBL[pr] : '–'),
           el('span', { class:`chip ${stClass(e.statut)}`, text:e.statut }))),
       body);
     let built = false;
@@ -1414,7 +1482,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     body.append(an);
 
     // Suivi
-    body.append(suiviEd.node);
+    body.append(suiviEd.node, historyBlock('remontee', e.id));
 
     body.append(el('div', { class:'sec row' }, el('button', { class:'btn danger small', text:'Supprimer la remontée', onclick: async () => {
       if (!confirm('Supprimer définitivement cette remontée, ses photos et sa note vocale ?')) return;
@@ -1432,6 +1500,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     msg.value = e.suivi?.message || '';
     const save = el('button', { class:'btn small', text:'Enregistrer le plan et le suivi' });
     save.onclick = async () => {
+      if (statut.value === 'Clôturé' && e.statut !== 'Clôturé' && !closureCheck(ed.list)) return;
       save.disabled = true; save.textContent = 'Enregistrement…';
       try {
         const r = await api(`/api/remontees/${e.id}`, { method:'PATCH', body:{ statut: statut.value, suivi: { actions: ed.clean(), message: msg.value } } });
@@ -1455,14 +1524,25 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     const dBox = el('div', {});
     const drawD = () => dBox.replaceChildren(...a.dangers.map((d, i) => {
       const fam = optSel(FAMILLES.includes(d.famille) ? FAMILLES : [d.famille, ...FAMILLES], d.famille); fam.onchange = () => d.famille = fam.value;
-      const g = optSel(gp.map(v => ({ v, l:`${v} · ${G_LBL[v]}` })), d.gravite); g.onchange = () => d.gravite = Number(g.value);
-      const p = optSel(gp.map(v => ({ v, l:`${v} · ${P_LBL[v]}` })), d.probabilite); p.onchange = () => d.probabilite = Number(p.value);
+      const res = el('div', { class:'hint', style:'margin:6px 0 0' });
+      const recalc = () => { const b = d.gravite * d.frequence, n = brutNiveau(b), pr = prioriteDe(n, d.maitrise);
+        res.replaceChildren(`Risque brut ${b} (${NIV_LBL[n]}) · net ${String(Math.round(b * d.maitrise * 100) / 100).replace('.', ',')} · `, prioBadge(pr)); };
+      const g = optSel(gp.map(v => ({ v, l:`${v} · ${G_LBL[v]}` })), d.gravite); g.title = G_DESC[d.gravite]; g.onchange = () => { d.gravite = Number(g.value); recalc(); };
+      const f = optSel(gp.map(v => ({ v, l:`${v} · ${F_LBL[v]} (${F_DESC[v]})` })), d.frequence); f.onchange = () => { d.frequence = Number(f.value); recalc(); };
+      const mt = optSel(MAITRISES.map(([v, l]) => ({ v, l:`${String(v).replace('.', ',')} · ${l}` })), d.maitrise); mt.onchange = () => { d.maitrise = Number(mt.value); recalc(); };
+      const du = optSel(DUERP_ST, d.duerp); du.onchange = () => d.duerp = du.value;
+      const me = el('textarea', { style:'min-height:50px', placeholder:'Une mesure par ligne' }); me.value = d.mesures_existantes.join('\n');
+      me.oninput = () => d.mesures_existantes = me.value.split('\n').map(x => x.trim()).filter(Boolean);
       const inp = (key, ta) => { const x = el(ta ? 'textarea' : 'input', ta ? {} : { type:'text' }); x.value = d[key]; x.oninput = () => d[key] = x.value; return x; };
+      recalc();
       return el('div', { class:'edrow' },
         el('label', {}, `Danger D${i+1}`, inp('danger')),
         el('div', { class:'edgrid', style:'margin-top:6px' },
           el('label', {}, 'Famille', fam), el('label', {}, 'Dommage possible', inp('dommage_possible')),
-          el('label', {}, 'Gravité', g), el('label', {}, 'Probabilité', p)),
+          el('label', {}, 'Gravité', g), el('label', {}, "Fréquence d'exposition", f),
+          el('label', {}, 'Niveau de maîtrise', mt), el('label', {}, 'Lien avec le DUERP', du)),
+        el('label', { style:'margin-top:6px' }, 'Mesures existantes', me),
+        res,
         el('label', { style:'margin-top:6px' }, 'Justification', inp('justification', true)),
         el('button', { type:'button', class:'linkbtn', style:'margin-top:6px', text:'Retirer ce danger', onclick:() => { a.dangers.splice(i, 1); drawD(); } }));
     }));
@@ -1487,7 +1567,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       const split = t => t.value.split('\n').map(s => s.trim()).filter(Boolean);
       const out = { ...e.analysis, ...a,
         synthese: synth.value.trim(),
-        dangers: a.dangers.filter(d => d.danger.trim()).map(({ criticite, ...d }) => d),
+        dangers: a.dangers.filter(d => d.danger.trim()).map(({ brut, net, niveau, priorite, ...d }) => d),
         mesures_immediates: split(imm), points_a_verifier: split(pts), references: split(refs),
         mesures_preventives: a.mesures_preventives.filter(m => m.mesure.trim()) };
       save.disabled = true; save.textContent = 'Enregistrement…';
@@ -1497,7 +1577,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     wrap.append(
       el('label', { class:'field' }, el('span', { text:'Synthèse' }), synth),
       el('div', { class:'field' }, el('span', { style:'display:block;font-size:14px;font-weight:600;margin-bottom:4px', text:'Dangers et cotation' }), dBox,
-        el('button', { type:'button', class:'btn ghost small', text:'Ajouter un danger', onclick:() => { a.dangers.push({ famille:'Autre', danger:'', dommage_possible:'', gravite:2, probabilite:2, justification:'' }); drawD(); } })),
+        el('button', { type:'button', class:'btn ghost small', text:'Ajouter un danger', onclick:() => { a.dangers.push({ famille:'Autre', danger:'', dommage_possible:'', gravite:2, frequence:2, maitrise:1, mesures_existantes:[], duerp:'À vérifier', justification:'' }); drawD(); } })),
       el('label', { class:'field' }, el('span', { text:'À faire tout de suite (une mesure par ligne)' }), imm),
       el('div', { class:'field' }, el('span', { style:'display:block;font-size:14px;font-weight:600;margin-bottom:4px', text:'Mesures préventives' }), mBox,
         el('button', { type:'button', class:'btn ghost small', text:'Ajouter une mesure', onclick:() => { a.mesures_preventives.push({ niveau:'Organisationnel', mesure:'', responsable_suggere:'' }); drawM(); } })),
@@ -1542,18 +1622,75 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       const ty = el('select', {}, el('option', { text:'Corrective' }), el('option', { text:'Préventive' })); ty.value = x.type; ty.onchange = () => x.type = ty.value;
       const pi = el('input', { type:'text', placeholder:'Fonction ou nom' }); pi.value = x.pilote; pi.oninput = () => x.pilote = pi.value;
       const ec = el('input', { type:'date' }); ec.value = x.echeance; ec.onchange = () => x.echeance = ec.value;
-      const st = el('select', {}, ...PLAN_ST.map(v => el('option', { text:v }))); st.value = x.statut; st.onchange = () => x.statut = st.value;
+      const st = el('select', {}, ...PLAN_ST.map(v => el('option', { text:v }))); st.value = x.statut; st.onchange = () => { x.statut = st.value; draw(); };
       const link = typeof x.fait === 'string' && x.fait ? ` (liée à ${x.fait})` : '';
+      let verif = null;
+      if (x.statut === 'Réalisée') {
+        const vr = el('select', {}, el('option', { value:'', text:'À vérifier' }), el('option', { text:'Efficace' }), el('option', { text:'Non efficace' }));
+        vr.value = x.verif_resultat || ''; vr.onchange = () => { x.verif_resultat = vr.value; if (vr.value && !x.verif_date) { x.verif_date = today(); vd.value = x.verif_date; } };
+        const vd = el('input', { type:'date' }); vd.value = x.verif_date || ''; vd.onchange = () => x.verif_date = vd.value;
+        const vc = el('input', { type:'text', placeholder:'Constat, preuve, mesure…' }); vc.value = x.verif_commentaire || ''; vc.oninput = () => x.verif_commentaire = vc.value;
+        verif = el('div', { class:'verif' }, el('b', { text:"Vérification d'efficacité" }),
+          el('div', { class:'pg' }, el('label', {}, 'Résultat', vr), el('label', {}, 'Date', vd), el('label', { style:'grid-column:span 2' }, 'Constat', vc)));
+      }
       return el('div', { class:'prow' },
         el('label', {}, `Action ${i + 1}${link}`, t),
         el('div', { class:'pg' }, el('label', {}, 'Type', ty), el('label', {}, 'Pilote', pi), el('label', {}, 'Échéance', ec), el('label', {}, 'Statut', st)),
+        verif,
         isLate(x) ? el('span', { class:'late', text:'En retard' }) : null,
+        x.statut === 'Réalisée' && x.verif_resultat === 'Non efficace' ? el('span', { class:'late', text:'Non efficace : prévoir une nouvelle action' }) : null,
         el('button', { type:'button', class:'linkbtn', style:'margin-top:6px;display:block', text:'Retirer cette action', onclick:() => { list.splice(i, 1); draw(); } }));
     }) : [el('p', { class:'hint', style:'margin:0 0 8px', text:emptyText })]));
     draw();
     return { node: box, list, add: x => { list.push(normAction(x)); draw(); },
       addButton: () => el('button', { type:'button', class:'btn ghost small', text:'Ajouter une action', onclick:() => { list.push(normAction({ texte:'' })); draw(); } }),
       clean: () => list.filter(x => x.texte.trim()).map(x => ({ ...x })) };
+  }
+  // ---------- Historique des modifications ----------
+  function atAnalysisView(a0) {
+    const a = normAt(a0), ms = arr(a0?.methodes).length ? a0.methodes : METH_KEYS;
+    return el('div', {},
+      card('Synthèse', el('p', { text:a.synthese })),
+      ms.includes('arbre') ? card('Arbre des causes', renderTree(a.arbre)) : null,
+      ms.includes('ishikawa') ? card('Ishikawa 5M', renderFish(a.ishikawa, 'Accident')) : null,
+      ms.includes('cinq_pourquoi') ? card('5 Pourquoi', renderWhy(a.cinq_pourquoi)) : null,
+      ms.includes('itamami') ? card('ITAMAMI', renderIta(a.itamami)) : null,
+      card('Causes racines', ulist(a.causes_racines)));
+  }
+  function historyBlock(cible, id) {
+    const sec = el('div', { class:'sec' }, el('h4', { text:'Historique des modifications' }));
+    const btn = el('button', { type:'button', class:'btn ghost small', text:"Afficher l'historique" });
+    btn.onclick = async () => {
+      btn.disabled = true; btn.textContent = 'Chargement…';
+      try {
+        const r = await api(`/api/historique/${cible}/${id}`);
+        const items = r.items || [];
+        btn.replaceWith(items.length ? el('ul', { class:'histo' }, ...items.map(h => {
+          const li = el('li', {}, el('div', { class:'emeta', text:`${fmtDateTime(h.date)} · ${h.auteur || 'inconnu'}` }), el('div', { text:h.action }));
+          if (h.details?.avant) {
+            const holder = el('div', {});
+            li.append(el('button', { type:'button', class:'linkbtn', style:'font-size:13px', text:'Voir la version précédente de l\'analyse', onclick: ev => {
+              if (holder.childNodes.length) { holder.replaceChildren(); ev.target.textContent = 'Voir la version précédente de l\'analyse'; return; }
+              holder.replaceChildren(el('div', { class:'oldver' }, cible === 'at' ? atAnalysisView(h.details.avant) : renderAnalysis(normalize(h.details.avant))));
+              ev.target.textContent = 'Masquer cette version';
+            } }), holder);
+          }
+          return li;
+        })) : el('p', { class:'hint', style:'margin:0', text:'Aucune modification enregistrée.' }));
+      } catch (err) { btn.disabled = false; btn.textContent = "Afficher l'historique"; toast(err.offline ? 'Pas de réseau.' : (err.message || 'Historique indisponible.')); }
+    };
+    sec.append(btn);
+    return sec;
+  }
+
+  // Avant de clôturer : toutes les actions réalisées et leur efficacité vérifiée
+  function closureCheck(list) {
+    const a = list.filter(x => x.texte.trim());
+    const todo = a.filter(x => x.statut !== 'Réalisée').length;
+    const nv = a.filter(x => x.statut === 'Réalisée' && !x.verif_resultat).length;
+    const ko = a.filter(x => x.verif_resultat === 'Non efficace').length;
+    const pb = [todo && `${todo} action(s) non réalisée(s)`, nv && `${nv} action(s) sans vérification d'efficacité`, ko && `${ko} action(s) jugée(s) non efficace(s)`].filter(Boolean);
+    return !pb.length || confirm(`Clôture : ${pb.join(', ')}. Clôturer quand même ?`);
   }
   const proposalRow = (x, onAdd) => el('div', { class:'prop' },
     el('div', {}, x.texte, el('div', { class:'emeta', text:[x.type, x.niveau, x.lien, x.pilote && `pilote : ${x.pilote}`, x.delai].filter(Boolean).join(' · ') })),
@@ -1827,7 +1964,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
         reanalyzeBtn(e, true)));
     };
     drawAnalysis();
-    body.append(s2, planEd.node);
+    body.append(s2, planEd.node, historyBlock('at', e.id));
 
     // 4. Fiche et suppression
     body.append(el('div', { class:'sec row' },
@@ -1871,6 +2008,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     const statut = el('select', {}, ...STATUTS.map(v => el('option', { text:v }))); statut.value = e.statut;
     const save = el('button', { type:'button', class:'btn small', text:'Enregistrer le plan et le suivi' });
     save.onclick = async () => {
+      if (statut.value === 'Clôturé' && e.statut !== 'Clôturé' && !closureCheck(ed.list)) return;
       save.disabled = true; save.textContent = 'Enregistrement…';
       try { const r = await api(`/api/at/${e.id}`, { method:'PATCH', body:{ plan: ed.clean(), groupe: groupe.value, statut: statut.value } }); replaceAt(r.item); rerenderAt(e.id); toast('Plan enregistré'); }
       catch (err) { save.disabled = false; save.textContent = 'Enregistrer le plan et le suivi'; toast(err.offline ? 'Pas de réseau.' : (err.message || "L'enregistrement a échoué.")); }
@@ -1979,9 +2117,10 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
         methodesOf(e).includes('itamami') ? sec('ITAMAMI', renderIta(a.itamami)) : null,
         sec('Causes racines', ulist(a.causes_racines))) : null,
       sec("Plan d'actions", plan.length ? el('table', {},
-        el('tr', {}, ...['Action','Type','Pilote','Échéance','Statut'].map(h => el('th', { text:h }))),
+        el('tr', {}, ...['Action','Type','Pilote','Échéance','Statut','Efficacité'].map(h => el('th', { text:h }))),
         ...plan.map(x => el('tr', {}, el('td', { text:x.texte }), el('td', { text:x.type }), el('td', { text:x.pilote || '—' }),
-          el('td', { text:x.echeance ? fmtDate(x.echeance) : '—' }), el('td', { text:x.statut + (isLate(x) ? ' (en retard)' : '') })))) : el('p', { text:'Aucune action enregistrée.' })),
+          el('td', { text:x.echeance ? fmtDate(x.echeance) : '—' }), el('td', { text:x.statut + (isLate(x) ? ' (en retard)' : '') }),
+          el('td', { text: x.statut === 'Réalisée' ? (x.verif_resultat ? `${x.verif_resultat}${x.verif_date ? ' le ' + fmtDate(x.verif_date) : ''}` : 'À vérifier') : '—' })))) : el('p', { text:'Aucune action enregistrée.' })),
       sec('Validation', el('div', { class:'sign' }, el('div', { text:'Responsable QSE' }), el('div', { text:'Encadrant' }), el('div', { text:'Date' })),
         el('p', { style:'font-size:8.5pt;color:#555', text:"Analyse préparée avec l'aide d'un outil d'IA et validée par le service QSE. Document interne, contient des données personnelles : diffusion restreinte." }))].filter(Boolean));
     setTimeout(() => window.print(), 100);
@@ -2020,7 +2159,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
   function allActions() {
     const out = [];
     for (const e of entries) arr(e.suivi?.actions).forEach((x, i) => out.push({ src:'rem', e, i, a:normAction(x), crit:maxCrit(e), origine:titleOf(e), date:e.date, site:e.site, lieu:e.lieu, secteur:e.secteur }));
-    for (const e of atEntries) arr(e.plan).forEach((x, i) => out.push({ src:'at', e, i, a:normAction(x), crit:16, origine:atTitle(e), date:e.date_accident, site:e.site, lieu:e.lieu, secteur:e.secteur }));
+    for (const e of atEntries) arr(e.plan).forEach((x, i) => out.push({ src:'at', e, i, a:normAction(x), crit:1000, origine:atTitle(e), date:e.date_accident, site:e.site, lieu:e.lieu, secteur:e.secteur }));
     return out;
   }
   const planFiltered = () => {
@@ -2030,7 +2169,9 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       if (si && x.site !== si) return false;
       if (st === 'actives' && x.a.statut === 'Réalisée') return false;
       if (st === 'retard' && !isLate(x.a)) return false;
-      if (st && st !== 'actives' && st !== 'retard' && x.a.statut !== st) return false;
+      if (st === 'verif' && !(x.a.statut === 'Réalisée' && !x.a.verif_resultat)) return false;
+      if (st === 'nonefficace' && x.a.verif_resultat !== 'Non efficace') return false;
+      if (st && !['actives','retard','verif','nonefficace'].includes(st) && x.a.statut !== st) return false;
       if (q && ![x.a.texte, x.a.pilote, x.origine, x.lieu, x.secteur, x.site].join(' ').toLowerCase().includes(q)) return false;
       return true;
     });
@@ -2047,12 +2188,15 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
   function planKpis(list) {
     const n = s => list.filter(x => x.a.statut === s).length;
     const late = list.filter(x => isLate(x.a)).length, done = n('Réalisée');
+    const aVerif = list.filter(x => x.a.statut === 'Réalisée' && !x.a.verif_resultat).length;
+    const eff = list.filter(x => x.a.verif_resultat === 'Efficace').length, verifiees = list.filter(x => x.a.verif_resultat).length;
     const k = (v, l, c, onclick) => el('button', { class:'kpi', style:`border-top-color:${c};text-align:left;border-left:0;border-right:0;border-bottom:0;cursor:pointer;color:inherit`, onclick }, el('b', { text:String(v) }), el('span', { text:l }));
     const go = st => () => { $('#pStatut').value = st; renderPlan(); };
     return el('div', {},
       el('div', { class:'kpis' }, k(n('À faire'), 'À faire', 'var(--r3)', go('À faire')), k(n('En cours'), 'En cours', 'var(--r2)', go('En cours')),
-        k(done, 'Réalisées', 'var(--r1)', go('Réalisée')), k(late, 'En retard', 'var(--r4)', go('retard'))),
-      list.length ? el('p', { class:'hint', style:'margin:0 0 12px', text:`Taux de réalisation : ${Math.round(100 * done / list.length)} % (${done} sur ${list.length} actions).` }) : null);
+        k(done, 'Réalisées', 'var(--r1)', go('Réalisée')), k(late, 'En retard', 'var(--r4)', go('retard')),
+        k(aVerif, 'Efficacité à vérifier', 'var(--ink-soft)', go('verif'))),
+      list.length ? el('p', { class:'hint', style:'margin:0 0 12px', text:`Taux de réalisation : ${Math.round(100 * done / list.length)} % (${done} sur ${list.length})${verifiees ? ` · efficacité confirmée pour ${eff} action(s) sur ${verifiees} vérifiée(s)` : ''}.` }) : null);
   }
 
   function renderPlan() {
@@ -2075,20 +2219,23 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     const pi = el('input', { type:'text', placeholder:'Pilote' }); pi.value = a.pilote;
     const ec = el('input', { type:'date' }); ec.value = a.echeance;
     const st = el('select', {}, ...PLAN_ST.map(v => el('option', { text:v }))); st.value = a.statut;
+    const ef = el('select', {}, el('option', { value:'', text:'À vérifier' }), el('option', { text:'Efficace' }), el('option', { text:'Non efficace' })); ef.value = a.verif_resultat || '';
+    const efLab = el('label', { style:'font-size:12px;font-weight:600' }, 'Efficacité', ef);
     const save = el('button', { type:'button', class:'btn small', text:'Enregistrer', hidden:true });
-    const dirty = () => { save.hidden = pi.value === a.pilote && ec.value === a.echeance && st.value === a.statut; };
-    pi.oninput = dirty; ec.onchange = dirty; st.onchange = dirty;
+    const dirty = () => { efLab.hidden = st.value !== 'Réalisée'; save.hidden = pi.value === a.pilote && ec.value === a.echeance && st.value === a.statut && ef.value === (a.verif_resultat || ''); };
+    pi.oninput = dirty; ec.onchange = dirty; st.onchange = dirty; ef.onchange = dirty;
+    efLab.hidden = a.statut !== 'Réalisée';
     save.onclick = async () => {
       save.disabled = true; save.textContent = 'Enregistrement…';
       try {
         if (x.src === 'rem') {
           const actions = arr(x.e.suivi?.actions).map(normAction);
-          actions[x.i] = { ...actions[x.i], pilote:pi.value.trim(), echeance:ec.value, statut:st.value };
+          actions[x.i] = { ...actions[x.i], pilote:pi.value.trim(), echeance:ec.value, statut:st.value, verif_resultat: st.value === 'Réalisée' ? ef.value : '', verif_date: st.value === 'Réalisée' && ef.value ? (actions[x.i].verif_date || today()) : '' };
           const r = await api(`/api/remontees/${x.e.id}`, { method:'PATCH', body:{ suivi:{ actions, message: x.e.suivi?.message || '' } } });
           replaceEntry(r.item);
         } else {
           const plan = arr(x.e.plan).map(normAction);
-          plan[x.i] = { ...plan[x.i], pilote:pi.value.trim(), echeance:ec.value, statut:st.value };
+          plan[x.i] = { ...plan[x.i], pilote:pi.value.trim(), echeance:ec.value, statut:st.value, verif_resultat: st.value === 'Réalisée' ? ef.value : '', verif_date: st.value === 'Réalisée' && ef.value ? (plan[x.i].verif_date || today()) : '' };
           const r = await api(`/api/at/${x.e.id}`, { method:'PATCH', body:{ plan } });
           replaceAt(r.item);
         }
@@ -2099,7 +2246,8 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     return el('div', { class:'card', style:`border-left:6px solid ${color};padding:12px 14px` },
       el('div', { class:'row', style:'justify-content:space-between;align-items:flex-start;flex-wrap:nowrap' },
         el('div', { style:'font-weight:600;font-size:16px;line-height:1.3', text:a.texte }),
-        el('div', { class:'eright' }, srcChip, isLate(a) ? el('span', { class:'late', text:'En retard' }) : null)),
+        el('div', { class:'eright' }, srcChip, isLate(a) ? el('span', { class:'late', text:'En retard' }) : null,
+          a.statut === 'Réalisée' ? el('span', { class:'effchip', style:`color:${a.verif_resultat === 'Efficace' ? 'var(--r1)' : a.verif_resultat ? 'var(--r4)' : 'var(--ink-soft)'}`, text: a.verif_resultat || 'Efficacité à vérifier' }) : null)),
       el('div', { class:'emeta', style:'margin:4px 0 8px' },
         [a.type, x.origine, x.site, x.lieu, fmtDate(x.date)].filter(Boolean).join(' · '), ' · ',
         el('button', { type:'button', class:'linkbtn', style:'font-size:13px', text:'voir la source', onclick:() => x.src === 'at' ? openInAt(x.e.id) : openInReg(x.e.id) })),
@@ -2107,14 +2255,16 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
         el('label', { style:'font-size:12px;font-weight:600' }, 'Pilote', pi),
         el('label', { style:'font-size:12px;font-weight:600' }, 'Échéance', ec),
         el('label', { style:'font-size:12px;font-weight:600' }, 'Statut', st),
+        efLab,
         save));
   }
 
   // Export CSV et impression du plan
   $('#planExport').onclick = () => {
-    const rows = [['Action','Type','Origine','Référence','Site','Catégorie métier','Lieu','Date de l\'événement','Pilote','Échéance','Statut','En retard','Réalisée le']];
+    const rows = [['Action','Type','Origine','Référence','Site','Catégorie métier','Lieu','Date de l\'événement','Pilote','Échéance','Statut','En retard','Réalisée le','Efficacité','Date de vérification','Constat']];
     for (const x of planFiltered()) rows.push([x.a.texte, x.a.type, x.src === 'at' ? 'Accident du travail' : 'Remontée terrain', x.origine, x.site, x.secteur, x.lieu, fmtDate(x.date),
-      x.a.pilote, x.a.echeance ? fmtDate(x.a.echeance) : '', x.a.statut, isLate(x.a) ? 'Oui' : 'Non', x.a.realisee_le ? fmtDate(x.a.realisee_le) : '']);
+      x.a.pilote, x.a.echeance ? fmtDate(x.a.echeance) : '', x.a.statut, isLate(x.a) ? 'Oui' : 'Non', x.a.realisee_le ? fmtDate(x.a.realisee_le) : '',
+      x.a.statut === 'Réalisée' ? (x.a.verif_resultat || 'À vérifier') : '', x.a.verif_date ? fmtDate(x.a.verif_date) : '', x.a.verif_commentaire || '']);
     const csv = '\ufeff' + rows.map(r => r.map(csvCell).join(';')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
     const link = el('a', { href:url, download:`plan-actions-${new Date().toISOString().slice(0, 10)}.csv` });
@@ -2127,10 +2277,10 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       el('div', { class:'ph' }, document.querySelector('.logo')?.cloneNode(true), el('div', {}, el('h1', { text:"Plan d'actions QSE" }),
         el('div', { style:'font-size:9pt;color:#555', text:`Édité le ${fmtDate(new Date())} · ${filtres} · ${list.length} action(s)` }))),
       el('table', {},
-        el('tr', {}, ...['Action','Origine','Site','Pilote','Échéance','Statut'].map(h => el('th', { text:h }))),
+        el('tr', {}, ...['Action','Origine','Site','Pilote','Échéance','Statut','Efficacité'].map(h => el('th', { text:h }))),
         ...list.map(x => el('tr', {}, el('td', { text:x.a.texte }), el('td', { text:`${x.src === 'at' ? 'AT' : 'Remontée'} : ${x.origine}` }),
           el('td', { text:x.site || '—' }), el('td', { text:x.a.pilote || '—' }), el('td', { text:x.a.echeance ? fmtDate(x.a.echeance) : '—' }),
-          el('td', { text:x.a.statut + (isLate(x.a) ? ' (en retard)' : '') })))));
+          el('td', { text:x.a.statut + (isLate(x.a) ? ' (en retard)' : '') }), el('td', { text: x.a.statut === 'Réalisée' ? (x.a.verif_resultat || 'À vérifier') : '—' })))));
     setTimeout(() => window.print(), 100);
   };
 
@@ -2154,7 +2304,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
   // ---------- Export CSV ----------
   const csvCell = v => `"${String(v ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
   $('#exportBtn').onclick = () => {
-    const head = ['ID','Date','Déclarant','Type','Site','Catégorie métier','Lieu','Description','Note vocale','Statut','Date de clôture','N° danger','Famille','Danger','Gravité','Probabilité','Criticité','Niveau','Mesures immédiates','Mesures préventives','Actions mises en place','Message au déclarant'];
+    const head = ['ID','Date','Déclarant','Type','Site','Catégorie métier','Lieu','Description','Note vocale','Statut','Date de clôture','N° danger','Famille','Danger','Gravité','Fréquence','Risque brut','Niveau brut','Mesures existantes','Maîtrise','Risque net','Priorité','Lien DUERP','Mesures immédiates','Mesures préventives','Actions mises en place','Message au déclarant'];
     const rows = [head];
     for (const e of filtered()) {
       const a = normalize(e.analysis);
@@ -2163,7 +2313,8 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       const acts = (e.suivi?.actions || []).map(normAction).map(x => `[${x.statut}] ${x.texte}`).join(' / ');
       const ds = a.dangers.length ? a.dangers : [null];
       ds.forEach((d, i) => rows.push([e.id, fmtDateTime(e.date), e.declarant, e.type, e.site, e.secteur, e.lieu, e.desc, e.note_vocale, e.statut, e.closed_at ? fmtDate(e.closed_at) : '',
-        d ? i + 1 : '', d?.famille, d?.danger, d?.gravite, d?.probabilite, d?.criticite, d ? BAND_LBL[band(d.criticite)] : '', imm, prev, acts, e.suivi?.message]));
+        d ? i + 1 : '', d?.famille, d?.danger, d?.gravite, d?.frequence, d?.brut, d ? NIV_LBL[d.niveau] : '', d ? d.mesures_existantes.join(' / ') : '',
+        d ? String(d.maitrise).replace('.', ',') : '', d ? String(d.net).replace('.', ',') : '', d ? PRIO_LBL[d.priorite] : '', d?.duerp, imm, prev, acts, e.suivi?.message]));
     }
     const csv = '\ufeff' + rows.map(r => r.map(csvCell).join(';')).join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
