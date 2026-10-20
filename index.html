@@ -2304,9 +2304,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       x.a.pilote, x.a.echeance ? fmtDate(x.a.echeance) : '', x.a.statut, isLate(x.a) ? 'Oui' : 'Non', x.a.realisee_le ? fmtDate(x.a.realisee_le) : '',
       x.a.statut === 'Réalisée' ? (x.a.verif_resultat || 'À vérifier') : '', x.a.verif_date ? fmtDate(x.a.verif_date) : '', x.a.verif_commentaire || '']);
     const csv = '\ufeff' + rows.map(r => r.map(csvCell).join(';')).join('\r\n');
-    const url = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
-    const link = el('a', { href:url, download:`plan-actions-${new Date().toISOString().slice(0, 10)}.csv` });
-    document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    saveFile(`plan-actions-${new Date().toISOString().slice(0, 10)}.csv`, csv, 'text/csv;charset=utf-8');
   };
   $('#planPrint').onclick = () => {
     const list = planFiltered();
@@ -2339,6 +2337,29 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
   $('#lbClose').onclick = () => lb.close();
   lb.addEventListener('click', ev => { if (ev.target === lb) lb.close(); });
 
+  // ---------- Enregistrement d'un fichier (ordinateur, Android, iPhone, appli installée) ----------
+  async function saveFile(filename, text, type) {
+    const blob = new Blob([text], { type });
+    const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    // Sur téléphone : feuille de partage native (Enregistrer dans Fichiers, Drive, e-mail…)
+    if (mobile && navigator.canShare) {
+      try {
+        const file = new File([blob], filename, { type: type.split(';')[0] });
+        if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: filename }); return; }
+      } catch (e) { if (e?.name === 'AbortError') return; }
+    }
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.rel = 'noopener'; a.style.display = 'none';
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      toast(`Fichier ${filename} téléchargé`);
+    } catch {
+      toast("Le téléchargement n'a pas pu démarrer sur ce navigateur.");
+    }
+  }
+
   // ---------- Export CSV ----------
   const csvCell = v => `"${String(v ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
   $('#exportBtn').onclick = () => {
@@ -2355,10 +2376,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
         d && d.maitrise !== null ? String(d.maitrise).replace('.', ',') : '', d && d.net !== null ? String(d.net).replace('.', ',') : '', d ? PRIO_LBL[d.priorite] : '', d?.duerp, imm, prev, acts, e.suivi?.message]));
     }
     const csv = '\ufeff' + rows.map(r => r.map(csvCell).join(';')).join('\r\n');
-    const url = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' }));
-    const link = el('a', { href:url, download:`registre-remontees-${new Date().toISOString().slice(0, 10)}.csv` });
-    document.body.append(link); link.click(); link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    saveFile(`registre-remontees-${new Date().toISOString().slice(0, 10)}.csv`, csv, 'text/csv;charset=utf-8');
   };
 
   // ---------- Démarrage ----------
