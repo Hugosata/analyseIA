@@ -374,7 +374,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       <p class="hint">Indiquez votre prénom et votre nom pour faire vos remontées et suivre leur traitement.</p>
       <label class="field"><span>Prénom et nom</span><input type="text" id="gName" autocomplete="name" placeholder="Ex. Camille Martin"></label>
       <div id="gAdminBox" hidden>
-        <label class="field"><span>Mot de passe administrateur</span><input type="password" id="gCode" autocomplete="current-password"></label>
+        <label class="field"><span>Votre mot de passe administrateur</span><input type="password" id="gCode" autocomplete="current-password"></label>
       </div>
       <p class="notice" id="gErr" hidden></p>
       <button type="button" class="btn block" id="gBtn">Entrer</button>
@@ -482,6 +482,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
         </select></span>
       </div>
       <div id="dash"></div>
+      <div class="card" id="adminsBox" style="margin-top:24px"></div>
     </section>
 
     <!-- Registre (admin) -->
@@ -751,7 +752,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     let data = null;
     try { data = await r.json(); } catch {}
     if (!r.ok) {
-      if (r.status === 401 && path !== '/api/ping') { showGate("Le mot de passe administrateur a changé. Reconnectez-vous."); setAdminMode(true); }
+      if (r.status === 401 && path !== '/api/ping') { showGate("Votre accès administrateur a changé ou a été retiré. Reconnectez-vous."); setAdminMode(true); }
       throw { status: r.status, message: data?.error || '' };
     }
     return data;
@@ -788,14 +789,14 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     const name = $('#gName').value.trim().replace(/\s+/g, ' '), admin = !$('#gAdminBox').hidden, code = admin ? $('#gCode').value.trim() : '';
     const err = m => { $('#gErr').textContent = m; $('#gErr').hidden = false; };
     if (name.length < 3 || !name.includes(' ')) return err('Indiquez votre prénom et votre nom.');
-    if (admin && !code) return err('Saisissez le mot de passe administrateur.');
+    if (admin && !code) return err('Saisissez votre mot de passe administrateur.');
     $('#gBtn').disabled = true;
     try {
       await enter(name, code);
-      if (admin && !isAdmin()) { session = null; writeJSON(SESSION_KEY, { name }); showGate('Mot de passe administrateur incorrect.'); setAdminMode(true); return; }
+      if (admin && !isAdmin()) { session = null; writeJSON(SESSION_KEY, { name }); showGate('Nom ou mot de passe administrateur incorrect. Le prénom et le nom doivent être ceux de votre accès.'); setAdminMode(true); return; }
       setAdminMode(false);
     }
-    catch (e) { showGate(e.status === 401 ? 'Mot de passe administrateur incorrect.' : e.offline ? (navigator.onLine ? "Le serveur ne répond pas. Réessayez dans un instant ; si ça persiste, prévenez le service QSE." : 'Pas de réseau. La première connexion doit se faire avec du réseau.') : (e.message || 'Connexion impossible.')); }
+    catch (e) { showGate(e.status === 401 ? 'Nom ou mot de passe administrateur incorrect. Le prénom et le nom doivent être ceux de votre accès.' : e.offline ? (navigator.onLine ? "Le serveur ne répond pas. Réessayez dans un instant ; si ça persiste, prévenez le service QSE." : 'Pas de réseau. La première connexion doit se faire avec du réseau.') : (e.message || 'Connexion impossible.')); }
     finally { $('#gBtn').disabled = false; }
   };
   ['#gCode', '#gName'].forEach(q => $(q).addEventListener('keydown', e => { if (e.key === 'Enter') $('#gBtn').click(); }));
@@ -810,7 +811,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     document.querySelectorAll('.navbtn').forEach(b => b.dataset.view === v ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
     window.scrollTo({ top: 0 });
     if (v === 'mine') { renderMine(); loadMine(); }
-    if (v === 'dash') { renderDash(); loadAll(); }
+    if (v === 'dash') { renderDash(); loadAll(); loadAdmins(); }
     if (v === 'reg') { renderReg(); loadAll(); }
     if (v === 'at') { renderAt(); loadAt(); }
     if (v === 'plan') { renderPlan(); loadAll(); }
@@ -2379,6 +2380,88 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     saveFile(`registre-remontees-${new Date().toISOString().slice(0, 10)}.csv`, csv, 'text/csv;charset=utf-8');
   };
 
+
+  // ---------- Gestion des administrateurs ----------
+  let adminsData = null;
+  async function loadAdmins() {
+    if (!isAdmin()) return;
+    const box = $('#adminsBox');
+    if (!adminsData) box.replaceChildren(el('h3', { style:'margin:0 0 8px', text:'Administrateurs' }), el('p', { class:'hint', text:'Chargement…' }));
+    try { adminsData = await api('/api/admins'); renderAdmins(); }
+    catch (e) { box.replaceChildren(el('h3', { style:'margin:0 0 8px', text:'Administrateurs' }), el('p', { class:'hint', text: e.offline ? 'Liste indisponible hors ligne.' : 'Liste indisponible (serveur pas encore à jour ?).' })); }
+  }
+  function renderAdmins() {
+    const box = $('#adminsBox'), d = adminsData || { admins: [] };
+    const me = d.me || {};
+    const list = d.admins.length
+      ? el('ul', { style:'list-style:none;padding:0;margin:0 0 14px' }, ...d.admins.map(a => el('li', { style:'display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)' },
+          el('span', {}, el('b', { text: a.name }), a.self ? ' (vous)' : '',
+            el('br'), el('span', { class:'hint', text: `Ajouté le ${fmtDate(a.created_at)}${a.created_by ? ' par ' + a.created_by : ''}${a.last_login ? ' · dernière connexion ' + fmtDateTime(a.last_login) : ' · jamais connecté'}` })),
+          a.self ? null : el('span', { class:'row' },
+            el('button', { type:'button', class:'btn ghost small', text:'Nouveau mot de passe', onclick: () => resetAdmin(a) }),
+            el('button', { type:'button', class:'btn danger small', text:'Retirer', onclick: () => removeAdmin(a) })))))
+      : el('p', { class:'hint', text:'Aucun administrateur nommé pour l\'instant. Seul l\'accès principal (code ADMIN_CODE) existe.' });
+
+    const fName = el('input', { type:'text', placeholder:'Prénom et nom', autocomplete:'off' });
+    const fPwd = el('input', { type:'text', placeholder:'Mot de passe provisoire (8 caractères min.)', autocomplete:'off' });
+    const gen = el('button', { type:'button', class:'btn ghost small', text:'Générer', onclick: () => { fPwd.value = genPwd(); } });
+    const add = el('button', { type:'button', class:'btn small', text:'Ajouter l\'administrateur' });
+    const msg = el('p', { class:'notice', hidden:true });
+    add.onclick = async () => {
+      const name = fName.value.trim().replace(/\s+/g, ' '), password = fPwd.value.trim();
+      msg.hidden = true;
+      if (name.length < 3 || !name.includes(' ')) { msg.textContent = 'Indiquez le prénom et le nom.'; msg.hidden = false; return; }
+      if (password.length < 8) { msg.textContent = 'Le mot de passe doit faire au moins 8 caractères.'; msg.hidden = false; return; }
+      add.disabled = true;
+      try {
+        await api('/api/admins', { method:'POST', body:{ name, password } });
+        toast(`${name} est administrateur`);
+        alert(`Accès créé. À transmettre à ${name} (de vive voix ou par SMS, pas par mail collectif) :\n\nPrénom et nom : ${name}\nMot de passe : ${password}\n\nIl ou elle pourra le changer dans le tableau de bord.`);
+        await loadAdmins();
+      } catch (e) { msg.textContent = e.message || 'Ajout impossible.'; msg.hidden = false; }
+      finally { add.disabled = false; }
+    };
+
+    const pNew = el('input', { type:'password', placeholder:'Nouveau mot de passe (8 caractères min.)', autocomplete:'new-password' });
+    const pBtn = el('button', { type:'button', class:'btn ghost small', text:'Changer mon mot de passe' });
+    pBtn.onclick = async () => {
+      const password = pNew.value.trim();
+      if (password.length < 8) return toast('8 caractères minimum');
+      pBtn.disabled = true;
+      try {
+        await api('/api/admins/me/password', { method:'POST', body:{ password } });
+        session.code = password; writeJSON(SESSION_KEY, session); pNew.value = '';
+        toast('Mot de passe modifié');
+      } catch (e) { toast(e.message || 'Modification impossible'); }
+      finally { pBtn.disabled = false; }
+    };
+
+    box.replaceChildren(
+      el('h3', { style:'margin:0 0 4px', text:'Administrateurs' }),
+      el('p', { class:'hint', style:'margin:0 0 12px', text:'Accès complet à l\'outil : tableau de bord, registre, AT, plan d\'actions. Chacun se connecte avec son prénom, son nom et son propre mot de passe.' }),
+      list,
+      el('h4', { style:'margin:10px 0 6px', text:'Ajouter un administrateur' }),
+      el('label', { class:'field' }, el('span', { text:'Prénom et nom (exactement comme à la connexion)' }), fName),
+      el('label', { class:'field' }, el('span', { text:'Mot de passe provisoire' }), el('span', { class:'row' }, fPwd, gen)),
+      msg, add,
+      me.named ? el('div', { style:'margin-top:18px' }, el('h4', { style:'margin:0 0 6px', text:'Mon mot de passe' }), el('span', { class:'row' }, pNew, pBtn)) : null);
+  }
+  function genPwd() {
+    const c = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789', a = new Uint32Array(10);
+    crypto.getRandomValues(a); return Array.from(a, x => c[x % c.length]).join('');
+  }
+  async function resetAdmin(a) {
+    const password = genPwd();
+    if (!confirm(`Donner un nouveau mot de passe à ${a.name} ? L'ancien ne fonctionnera plus.`)) return;
+    try { await api(`/api/admins/${a.id}/password`, { method:'POST', body:{ password } }); alert(`Nouveau mot de passe de ${a.name} :\n\n${password}`); loadAdmins(); }
+    catch (e) { toast(e.message || 'Modification impossible'); }
+  }
+  async function removeAdmin(a) {
+    if (!confirm(`Retirer l'accès administrateur de ${a.name} ? Ses remontées et son historique sont conservés.`)) return;
+    try { await api(`/api/admins/${a.id}`, { method:'DELETE' }); toast(`Accès de ${a.name} retiré`); loadAdmins(); }
+    catch (e) { toast(e.message || 'Suppression impossible'); }
+  }
+
   // ---------- Démarrage ----------
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
   (async () => {
@@ -2390,7 +2473,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       catch (e) {
         if (e.offline) { session = { ...s, code }; showApp(); return; }   // hors ligne : on garde la session
         session = null;
-        showGate(e.status === 401 ? 'Le mot de passe administrateur a changé. Reconnectez-vous.' : (e.message || 'Connexion impossible.'));
+        showGate(e.status === 401 ? 'Votre accès administrateur a changé ou a été retiré. Reconnectez-vous.' : (e.message || 'Connexion impossible.'));
         if (e.status === 401) setAdminMode(true);
         return;
       }
