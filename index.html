@@ -2395,9 +2395,10 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     const me = d.me || {};
     const list = d.admins.length
       ? el('ul', { style:'list-style:none;padding:0;margin:0 0 14px' }, ...d.admins.map(a => el('li', { style:'display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)' },
-          el('span', {}, el('b', { text: a.name }), a.self ? ' (vous)' : '',
+          el('span', {}, el('b', { text: a.name }), a.self ? ' (vous)' : '', a.protege ? el('span', { class:'stat', style:'margin-left:6px', text:'Protégé' }) : null,
             el('br'), el('span', { class:'hint', text: `Ajouté le ${fmtDate(a.created_at)}${a.created_by ? ' par ' + a.created_by : ''}${a.last_login ? ' · dernière connexion ' + fmtDateTime(a.last_login) : ' · jamais connecté'}` })),
-          a.self ? null : el('span', { class:'row' },
+          a.self || (a.protege && !me.master) ? null : el('span', { class:'row' },
+            me.master ? el('button', { type:'button', class:'btn ghost small', text: a.protege ? 'Retirer la protection' : 'Protéger', onclick: () => protectAdmin(a, !a.protege) }) : null,
             el('button', { type:'button', class:'btn ghost small', text:'Nouveau mot de passe', onclick: () => resetAdmin(a) }),
             el('button', { type:'button', class:'btn danger small', text:'Retirer', onclick: () => removeAdmin(a) })))))
       : el('p', { class:'hint', text:'Aucun administrateur nommé pour l\'instant. Seul l\'accès principal (code ADMIN_CODE) existe.' });
@@ -2405,6 +2406,8 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     const fName = el('input', { type:'text', placeholder:'Prénom et nom', autocomplete:'off' });
     const fPwd = el('input', { type:'text', placeholder:'Mot de passe provisoire (8 caractères min.)', autocomplete:'off' });
     const gen = el('button', { type:'button', class:'btn ghost small', text:'Générer', onclick: () => { fPwd.value = genPwd(); } });
+    const fProt = el('input', { type:'checkbox' });
+    const protRow = me.master ? el('label', { style:'display:flex;gap:8px;align-items:center;margin:0 0 12px;font-size:15px' }, fProt, 'Compte protégé (ne peut pas être modifié ni retiré par les autres administrateurs)') : null;
     const add = el('button', { type:'button', class:'btn small', text:'Ajouter l\'administrateur' });
     const msg = el('p', { class:'notice', hidden:true });
     add.onclick = async () => {
@@ -2414,7 +2417,7 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       if (password.length < 8) { msg.textContent = 'Le mot de passe doit faire au moins 8 caractères.'; msg.hidden = false; return; }
       add.disabled = true;
       try {
-        await api('/api/admins', { method:'POST', body:{ name, password } });
+        await api('/api/admins', { method:'POST', body:{ name, password, protege: fProt.checked } });
         toast(`${name} est administrateur`);
         alert(`Accès créé. À transmettre à ${name} (de vive voix ou par SMS, pas par mail collectif) :\n\nPrénom et nom : ${name}\nMot de passe : ${password}\n\nIl ou elle pourra le changer dans le tableau de bord.`);
         await loadAdmins();
@@ -2443,8 +2446,9 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
       el('h4', { style:'margin:10px 0 6px', text:'Ajouter un administrateur' }),
       el('label', { class:'field' }, el('span', { text:'Prénom et nom (exactement comme à la connexion)' }), fName),
       el('label', { class:'field' }, el('span', { text:'Mot de passe provisoire' }), el('span', { class:'row' }, fPwd, gen)),
-      msg, add,
-      me.named ? el('div', { style:'margin-top:18px' }, el('h4', { style:'margin:0 0 6px', text:'Mon mot de passe' }), el('span', { class:'row' }, pNew, pBtn)) : null);
+      protRow, msg, add,
+      me.named ? el('div', { style:'margin-top:18px' }, el('h4', { style:'margin:0 0 6px', text:'Mon mot de passe' }), el('span', { class:'row' }, pNew, pBtn))
+        : el('p', { class:'hint', style:'margin-top:18px', text:"Vous êtes connecté avec l'accès principal (ADMIN_CODE). Pour avoir un mot de passe personnel modifiable ici, créez votre propre compte, cochez « Compte protégé », puis reconnectez-vous avec ce compte." }));
   }
   function genPwd() {
     const c = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789', a = new Uint32Array(10);
@@ -2454,6 +2458,10 @@ input[type=datetime-local],input[type=date]{width:100%;padding:10px 12px;border:
     const password = genPwd();
     if (!confirm(`Donner un nouveau mot de passe à ${a.name} ? L'ancien ne fonctionnera plus.`)) return;
     try { await api(`/api/admins/${a.id}/password`, { method:'POST', body:{ password } }); alert(`Nouveau mot de passe de ${a.name} :\n\n${password}`); loadAdmins(); }
+    catch (e) { toast(e.message || 'Modification impossible'); }
+  }
+  async function protectAdmin(a, on) {
+    try { await api(`/api/admins/${a.id}/protege`, { method:'POST', body:{ protege: on } }); toast(on ? `Compte de ${a.name} protégé` : `Protection retirée pour ${a.name}`); loadAdmins(); }
     catch (e) { toast(e.message || 'Modification impossible'); }
   }
   async function removeAdmin(a) {
